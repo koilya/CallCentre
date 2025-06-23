@@ -1,18 +1,32 @@
 import requests
 import os
+import io
 
-ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")  # Or hard-code temporarily
-BASE_URL = "https://api.elevenlabs.io/v1"
+ELEVEN_LABS_API_KEY = "sk_2af65ef7c06ac45a924554afdef2ed8a7a2b62646715f1dc"  # Or hard-code temporarily
+ELEVEN_LABS_VOICE_ID = "6F5Zhi321D3Oq7v1oNT4"  # Replace with your real voice ID
 
-def generate_speech(text: str, voice_id: str = "default") -> bytes:
+def query_elevenlabs(text: str) -> io.BytesIO:
+    if not ELEVEN_LABS_API_KEY:
+        raise Exception("Missing Eleven Labs API key")
+
     headers = {
-        "xi-api-key": ELEVENLABS_API_KEY,
-        "Content-Type": "application/json"
+        "Accept": "audio/mpeg",
+        "Content-Type": "application/json",
+        "xi-api-key": ELEVEN_LABS_API_KEY
     }
+
     payload = {
         "text": text,
-        "voice_settings": {"stability": 0.75, "similarity_boost": 0.75}
+        "voice_settings": {
+            "stability": 0.75,
+            "similarity_boost": 0.75
+        }
     }
-    response = requests.post(f"{BASE_URL}/text-to-speech/{voice_id}", json=payload, headers=headers)
-    response.raise_for_status()
-    return response.content  # This is audio data
+
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVEN_LABS_VOICE_ID}"
+    response = requests.post(url, json=payload, headers=headers)
+
+    if response.status_code != 200:
+        raise Exception(f"Eleven Labs API error {response.status_code}: {response.text}")
+
+    return io.BytesIO(response.content)
